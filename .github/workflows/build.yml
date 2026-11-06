@@ -86,16 +86,20 @@ jobs:
         env:
           file_name_suffix: ""
         run: |
+          board_name="${{ matrix.board }}"
+          board_name="${board_name//\//_}"
+
           if [ -n "${{ matrix.shield }}" ]
           then
             echo "extra_cmake_args=-DSHIELD=\"${{ matrix.shield }}\"" >> $GITHUB_ENV
-            echo "artifact_name=${{ matrix.shield }}-${{ matrix.board }}${{ matrix.file_name_suffix }}-zmk" >> $GITHUB_ENV
+            echo "artifact_name=${{ matrix.shield }}-${board_name}${{ matrix.file_name_suffix }}-zmk" >> $GITHUB_ENV
             echo "display_name=${{ matrix.shield }} - ${{ matrix.board }}${{ matrix.file_name_suffix }}" >> $GITHUB_ENV
           else
             echo "extra_cmake_args=" >> $GITHUB_ENV
-            echo "artifact_name=${{ matrix.board }}${{ matrix.file_name_suffix }}-zmk" >> $GITHUB_ENV
+            echo "artifact_name=${board_name}${{ matrix.file_name_suffix }}-zmk" >> $GITHUB_ENV
             echo "display_name=${{ matrix.board }}${{ matrix.file_name_suffix }}" >> $GITHUB_ENV
           fi
+
           echo "zephyr_version=${ZEPHYR_VERSION}" >> $GITHUB_ENV
 
       - name: Checkout
@@ -142,7 +146,14 @@ jobs:
 
       - name: West Build (${{ env.display_name }})
         shell: sh -x {0}
-        run: west build -s zmk/app -b ${{ matrix.board }} -- -DZMK_CONFIG=${GITHUB_WORKSPACE}/${{ needs.env-setup.outputs.config_path }} ${{ env.extra_cmake_args }} ${{ matrix.cmake-args }} ${{ env.name }}
+        run: |
+          west build -s zmk/app \
+            -b "${{ matrix.board }}" \
+            -- \
+            -DZMK_CONFIG="${GITHUB_WORKSPACE}/${{ needs.env-setup.outputs.config_path }}" \
+            ${{ env.extra_cmake_args }} \
+            ${{ matrix.cmake-args }} \
+            ${{ env.name }}
 
       - name: Remove name from config
         if: ${{ matrix.name }}
@@ -157,6 +168,7 @@ jobs:
         shell: sh -x {0}
         run: |
           mkdir -p build/artifacts
+
           if [ -f build/zephyr/zmk.uf2 ]
           then
             cp build/zephyr/zmk.uf2 "build/artifacts/${{ env.artifact_name }}.uf2"
