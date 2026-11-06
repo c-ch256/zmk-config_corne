@@ -13,9 +13,9 @@
 #
 ---
 include:
- 
-  - board: nrfmicro/nrf52840/zmk
+  - board: nice_nano//zmk
     shield: [corne_left, corne_right]
     name: ["Corne"]
-  - board: nrfmicro/nrf52840/zmk
+
+  - board: nice_nano//zmk
     shield: settings_reset
